@@ -212,6 +212,41 @@ class SubmitQuizResponse(BaseModel):
     recommended_next_step: str
 
 
+class FailureLabelDistributionItem(BaseModel):
+    failure_label: FailureLabel
+    count: int = Field(ge=0)
+
+
+class ConceptAttemptSummary(BaseModel):
+    concept_id: str
+    title: str
+    discipline: str
+    attempt_count: int = Field(ge=0)
+
+
+class RecentLearningEvent(BaseModel):
+    session_id: str
+    concept_id: str
+    concept_title: str
+    discipline: str
+    status: SessionStatus
+    failure_label: FailureLabel | None = None
+    confidence_score: int | None = Field(default=None, ge=1, le=5)
+    quiz_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    created_at: datetime
+    updated_at: datetime
+
+
+class DashboardMetricsResponse(BaseModel):
+    total_sessions: int = Field(ge=0)
+    completed_sessions: int = Field(ge=0)
+    average_confidence_score: float | None = Field(default=None, ge=1.0, le=5.0)
+    average_quiz_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    failure_label_distribution: list[FailureLabelDistributionItem]
+    recent_learning_events: list[RecentLearningEvent]
+    concepts_attempted: list[ConceptAttemptSummary]
+
+
 class SessionTraceResponse(BaseModel):
     session: LearningSession
     concept: ConceptSummary

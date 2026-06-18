@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import Counter
+from statistics import mean
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, status
@@ -9,13 +11,18 @@ from app.models import (
     ApiError,
     ChallengePreview,
     Concept,
+    ConceptAttemptSummary,
     ConceptListResponse,
     ConceptResponse,
     ConceptSummary,
     CreateSessionRequest,
     CreateSessionResponse,
+    DashboardMetricsResponse,
+    FailureLabelDistributionItem,
     HealthResponse,
+    RecentLearningEvent,
     RetrievalQuiz,
+    SessionStatus,
     SessionTraceResponse,
     StudentAttempt,
     SubmitAttemptRequest,
@@ -23,8 +30,21 @@ from app.models import (
     SubmitQuizRequest,
     SubmitQuizResponse,
 )
-from app.repositories.memory import InMemoryLearningRepository, utc_now
+from app.repositories.base import LearningRepository
+from app.repositories.json_file import JsonFileLearningRepository
+from app.repositories.memory import InMemoryLearningRepository
 from app.services.mock_learning_engine import MockLearningEngine
+from app.settings import load_settings
+from app.time_utils import utc_now
+
+
+def _build_repository() -> LearningRepository:
+    settings = load_settings()
+    if settings.storage_mode == "memory":
+        return InMemoryLearningRepository()
+    if settings.storage_mode in {"local", "local_json"}:
+        return JsonFileLearningRepository(store_path=settings.local_store_path)
+    raise ValueError(f"Unsupported PF_STORAGE_MODE: {settings.storage_mode!r}.")
 
 
 app = FastAPI(
@@ -34,10 +54,10 @@ app = FastAPI(
         "pre-instruction challenge, typed failure analysis, consolidation, retrieval quiz, "
         "and learning-event dashboard."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
 
-repository = InMemoryLearningRepository()
+repository: LearningRepository = _build_repository()
 learning_engine = MockLearningEngine()
 
 
@@ -161,6 +181,47 @@ def get_session_trace(session_id: str) -> SessionTraceResponse:
     )
 
 
+@app.get("/dashboard", response_model=DashboardMetricsResponse)
+def get_dashboard() -> DashboardMetricsResponse:
+    sessions = repository.list_sessions()
+    attempts = [
+        attempt
+        for session in sessions
+        if (attempt := repository.get_attempt(session.session_id)) is not None
+    ]
+    analyses = [
+        analysis
+        for session in sessions
+        if (analysis := repository.get_failure_analysis(session.session_id)) is not None
+    ]
+    quiz_results = [
+        quiz_result
+        for session in sessions
+        if (quiz_result := repository.get_quiz_result(session.session_id)) is not None
+    ]
+
+    failure_counts = Counter(analysis.failure_label for analysis in analyses)
+    concept_attempt_counts = Counter(
+        session.concept_id
+        for session in sessions
+        if repository.get_attempt(session.session_id) is not None
+    )
+
+    return DashboardMetricsResponse(
+        total_sessions=len(sessions),
+        completed_sessions=sum(1 for session in sessions if session.status == SessionStatus.QUIZ_COMPLETED),
+        average_confidence_score=_average_or_none([attempt.confidence_score for attempt in attempts]),
+        average_quiz_score=_average_or_none([quiz_result.score for quiz_result in quiz_results]),
+        failure_label_distribution=[
+            FailureLabelDistributionItem(failure_label=label, count=count)
+            for label, count in sorted(failure_counts.items(), key=lambda item: item[0].value)
+        ],
+        recent_learning_events=_recent_learning_events(sessions),
+        concepts_attempted=_concepts_attempted(concept_attempt_counts),
+    )
+
+
+
 def _get_concept_or_404(concept_id: str) -> Concept:
     concept = CONCEPTS_BY_ID.get(concept_id)
     if concept is None:
@@ -213,3 +274,48 @@ def _public_quiz(stored_quiz) -> RetrievalQuiz:
         questions=stored_quiz.questions,
         created_at=stored_quiz.created_at,
     )
+
+
+def _average_or_none(values: list[float | int]) -> float | None:
+    if not values:
+        return None
+    return round(float(mean(values)), 3)
+
+
+def _recent_learning_events(sessions) -> list[RecentLearningEvent]:
+    events: list[RecentLearningEvent] = []
+    for session in sessions[:10]:
+        concept = _get_concept_or_404(session.concept_id)
+        attempt = repository.get_attempt(session.session_id)
+        analysis = repository.get_failure_analysis(session.session_id)
+        quiz_result = repository.get_quiz_result(session.session_id)
+        events.append(
+            RecentLearningEvent(
+                session_id=session.session_id,
+                concept_id=concept.concept_id,
+                concept_title=concept.title,
+                discipline=concept.discipline,
+                status=session.status,
+                failure_label=analysis.failure_label if analysis else None,
+                confidence_score=attempt.confidence_score if attempt else None,
+                quiz_score=quiz_result.score if quiz_result else None,
+                created_at=session.created_at,
+                updated_at=session.updated_at,
+            )
+        )
+    return events
+
+
+def _concepts_attempted(concept_attempt_counts: Counter[str]) -> list[ConceptAttemptSummary]:
+    summaries: list[ConceptAttemptSummary] = []
+    for concept_id, attempt_count in sorted(concept_attempt_counts.items()):
+        concept = _get_concept_or_404(concept_id)
+        summaries.append(
+            ConceptAttemptSummary(
+                concept_id=concept.concept_id,
+                title=concept.title,
+                discipline=concept.discipline,
+                attempt_count=attempt_count,
+            )
+        )
+    return summaries
