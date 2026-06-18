@@ -17,7 +17,7 @@ from app.models import (
     StoredRetrievalQuiz,
     StudentAttempt,
 )
-from app.repositories.memory import utc_now
+from app.time_utils import utc_now
 
 
 class MockLearningEngine:

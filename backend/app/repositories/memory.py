@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.models import (
@@ -13,9 +12,7 @@ from app.models import (
     StoredRetrievalQuiz,
 )
 
-
-def utc_now() -> datetime:
-    return datetime.now(UTC)
+from app.time_utils import utc_now
 
 
 class InMemoryLearningRepository:
@@ -49,6 +46,13 @@ class InMemoryLearningRepository:
 
     def get_session(self, session_id: str) -> LearningSession | None:
         return self._sessions.get(session_id)
+
+    def list_sessions(self) -> list[LearningSession]:
+        return sorted(
+            self._sessions.values(),
+            key=lambda session: session.updated_at,
+            reverse=True,
+        )
 
     def save_attempt_bundle(
         self,
