@@ -31,3 +31,9 @@ Thumbs.db
 # Secrets
 .env.*
 !.env.example
+
+# Python packaging artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
