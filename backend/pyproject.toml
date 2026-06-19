@@ -20,7 +20,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["app", "app.repositories", "app.services"]
+packages = ["app", "app.repositories", "app.services", "app.evals"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
