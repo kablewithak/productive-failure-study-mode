@@ -5,6 +5,7 @@ from statistics import mean
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.concept_seed import CONCEPTS_BY_ID, SEEDED_CONCEPTS
 from app.models import (
@@ -34,17 +35,19 @@ from app.repositories.base import LearningRepository
 from app.repositories.json_file import JsonFileLearningRepository
 from app.repositories.memory import InMemoryLearningRepository
 from app.services.mock_learning_engine import MockLearningEngine
-from app.settings import load_settings
+from app.settings import AppSettings, load_settings
 from app.time_utils import utc_now
 
 
-def _build_repository() -> LearningRepository:
-    settings = load_settings()
-    if settings.storage_mode == "memory":
+settings = load_settings()
+
+
+def _build_repository(app_settings: AppSettings) -> LearningRepository:
+    if app_settings.storage_mode == "memory":
         return InMemoryLearningRepository()
-    if settings.storage_mode in {"local", "local_json"}:
-        return JsonFileLearningRepository(store_path=settings.local_store_path)
-    raise ValueError(f"Unsupported PF_STORAGE_MODE: {settings.storage_mode!r}.")
+    if app_settings.storage_mode in {"local", "local_json"}:
+        return JsonFileLearningRepository(store_path=app_settings.local_store_path)
+    raise ValueError(f"Unsupported PF_STORAGE_MODE: {app_settings.storage_mode!r}.")
 
 
 app = FastAPI(
@@ -54,10 +57,18 @@ app = FastAPI(
         "pre-instruction challenge, typed failure analysis, consolidation, retrieval quiz, "
         "and learning-event dashboard."
     ),
-    version="0.3.0",
+    version="0.4.0",
 )
 
-repository: LearningRepository = _build_repository()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.frontend_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type"],
+)
+
+repository: LearningRepository = _build_repository(settings)
 learning_engine = MockLearningEngine()
 
 
