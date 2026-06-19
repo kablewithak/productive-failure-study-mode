@@ -1,4 +1,4 @@
-﻿# Productive Failure Study Mode
+# Productive Failure Study Mode
 
 Production-shaped feature spike for a BAG Learning-style AI study companion.
 
@@ -26,9 +26,52 @@ It is inspired by Productive Failure research, where learners first attempt a no
 
 - Frontend: Next.js, React, TypeScript, Tailwind
 - Backend: FastAPI, Pydantic v2
-- Persistence: local adapter first, Supabase/Postgres optional
+- Persistence: local JSON adapter first, Supabase/Postgres optional later
 - AI mode: deterministic mock AI first, optional live AI later
 - Evals: fixed cases for failure labels, consolidation, retrieval quiz shape, and answer-key leakage
+
+## Local run
+
+### Backend
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".\backend[dev]"
+python -m uvicorn app.main:app --app-dir .\backend --reload
+```
+
+Backend API:
+
+```text
+http://127.0.0.1:8000/docs
+http://127.0.0.1:8000/dashboard
+```
+
+### Frontend
+
+Open a second PowerShell tab from the repo root.
+
+```powershell
+Set-Location "C:\Users\kabom\Documents\Machine Learning\Machine Learning Workspace\productive-failure-study-mode"
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend app:
+
+```text
+http://localhost:3000
+```
+
+## Validation
+
+```powershell
+python -m pytest .\backend\tests
+cd frontend
+npm run typecheck
+npm run build
+```
 
 ## Non-claims
 
@@ -37,15 +80,3 @@ It is not production-ready.
 It is not POPIA compliant.
 It does not replace BAG Learning or Zazi.
 It is a production-shaped feature spike.
-
-## First delivery gate
-
-Phase 0 is complete when:
-
-- repo exists
-- first commit is pushed
-- README states the north star
-- docs/PRD.md exists
-- frontend and backend folders exist
-- .env.example exists
-- .gitignore exists
