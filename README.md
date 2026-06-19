@@ -73,6 +73,23 @@ npm run typecheck
 npm run build
 ```
 
+
+## Eval harness
+
+Run the fixed mock-AI eval harness from the repo root:
+
+```powershell
+python -m app.evals.runner
+```
+
+Optional JSON report:
+
+```powershell
+python -m app.evals.runner --json-out backend/.local_data/eval_report.json
+```
+
+The eval harness checks ten diagnostic cases across law, commerce, engineering, and Python lists. It verifies schema validity, expected failure labels, consolidation presence, retrieval quiz shape, transfer-question coverage, and answer-key leakage before quiz submission.
+
 ## Non-claims
 
 This prototype does not prove real learning outcomes.
