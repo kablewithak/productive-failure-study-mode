@@ -66,10 +66,16 @@ def test_submit_attempt_returns_typed_failure_analysis_consolidation_and_public_
     }
     assert analysis.should_consolidate is True
     assert payload["consolidation"]["explanation"]
+    assert payload["failure_analysis"]["source"]["citation_label"].startswith("Sample")
+    assert payload["failure_analysis"]["matched_rubric_items"]
+    assert payload["failure_analysis"]["missing_rubric_items"]
+    assert payload["consolidation"]["source"]["title"].startswith("Sample")
 
     quiz = RetrievalQuiz.model_validate(payload["retrieval_quiz"])
     assert len(quiz.questions) == 3
     assert any(question.question_type == "scenario_transfer" for question in quiz.questions)
+    assert quiz.source.citation_label.startswith("Sample")
+    assert all(question.source_citation_label for question in quiz.questions)
     assert "answer_key" not in payload["retrieval_quiz"]
 
 
@@ -110,6 +116,9 @@ def test_get_session_trace_after_attempt_returns_safe_public_trace() -> None:
     assert trace["attempt"]["attempt_text"].startswith("This looks like")
     assert trace["failure_analysis"]["failure_label"] == "strong_attempt"
     assert trace["retrieval_quiz"] is not None
+    assert trace["challenge"]["source"]["citation_label"].startswith("Sample")
+    assert trace["failure_analysis"]["source"]["citation_label"].startswith("Sample")
+    assert trace["retrieval_quiz"]["source"]["citation_label"].startswith("Sample")
     assert "answer_key" not in trace["retrieval_quiz"]
 
 

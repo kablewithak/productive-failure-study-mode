@@ -1,0 +1,112 @@
+{
+  "concept_id": "python_lists_sliding_window",
+  "title": "Python lists: keeping the most recent readings",
+  "discipline": "Computer Science",
+  "module_context": "Introductory programming",
+  "learning_outcome": "Use a Python list to store, append, and remove values so that only the most recent fixed number of readings is retained.",
+  "prerequisite_knowledge": [
+    "variables",
+    "while loops",
+    "if statements",
+    "basic function calls"
+  ],
+  "challenge_type": "diagnose_error",
+  "challenge_prompt": "A sensor produces one new heart-rate reading at a time. Without using a full explanation of lists yet, describe how you would keep only the 10 most recent readings and discard older readings as new readings arrive.",
+  "expected_reasoning_steps": [
+    "Represent multiple readings as one ordered collection.",
+    "Add each new reading to the end of the collection.",
+    "Check whether the collection contains more than 10 readings.",
+    "Remove the oldest reading when the collection grows beyond 10.",
+    "Use the updated collection as the current state."
+  ],
+  "common_misconceptions": [
+    "Storing each reading in a separate variable instead of one collection.",
+    "Replacing the whole collection with the newest reading.",
+    "Removing the newest reading instead of the oldest reading.",
+    "Checking the value of a reading instead of checking the number of readings."
+  ],
+  "canonical_explanation": "A Python list is an ordered collection that can grow and shrink. For this task, the useful structure is a sliding window: append the newest reading, then if the list is longer than 10, remove the first item because it is the oldest reading.",
+  "canonical_answer": "Keep the readings in one list. For each new reading, append it to the end. If the list length becomes greater than 10, remove the item at index 0 because it is the oldest reading. The list then always contains the 10 most recent readings.",
+  "worked_example": "Keep readings in one list. Append the newest reading. If the list length becomes 11, remove index 0 so only 10 remain.",
+  "source": {
+    "source_id": "sample-python-lists-001",
+    "title": "Sample Programming Notes: Python Lists and Sliding Windows",
+    "citation_label": "Sample Python Notes - Section 4",
+    "excerpt": "A list stores ordered values under one name. You can append a new value to the end of a list and remove an existing value by position. A sliding window keeps only the newest fixed number of items: append the newest item, then remove the oldest item when the list becomes too long."
+  },
+  "rubric_items": [
+    {
+      "rubric_item_id": "ordered_collection",
+      "criterion": "Uses one ordered collection",
+      "expected_markers": [
+        "list",
+        "collection",
+        "array",
+        "ordered"
+      ],
+      "feedback_if_missing": "Use one ordered collection instead of ten separate variables or a string.",
+      "weight": 2
+    },
+    {
+      "rubric_item_id": "append_new",
+      "criterion": "Adds each new reading to the end",
+      "expected_markers": [
+        "append",
+        "add",
+        "newest",
+        "end"
+      ],
+      "feedback_if_missing": "State how each new reading enters the collection, ideally by appending it.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "length_check",
+      "criterion": "Checks whether more than 10 readings are stored",
+      "expected_markers": [
+        "len",
+        "length",
+        "more than 10",
+        "greater than 10",
+        "11"
+      ],
+      "feedback_if_missing": "Check the number of stored readings after adding the newest reading.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "remove_oldest",
+      "criterion": "Removes the oldest reading when over limit",
+      "expected_markers": [
+        "oldest",
+        "pop(0)",
+        "remove first",
+        "index 0",
+        "discard older"
+      ],
+      "feedback_if_missing": "Remove the first/oldest item, not the newest item.",
+      "weight": 2
+    }
+  ],
+  "retrieval_questions": [
+    {
+      "question_id": "q1",
+      "question_text": "Why is a list more suitable than ten separate variables for this task?",
+      "question_type": "short_answer",
+      "expected_answer": "A list stores an ordered collection under one name and can grow or shrink as readings arrive.",
+      "scoring_guidance": "Look for ordered collection and easier update logic."
+    },
+    {
+      "question_id": "q2",
+      "question_text": "What should happen immediately after the eleventh reading is added?",
+      "question_type": "short_answer",
+      "expected_answer": "The oldest reading should be removed so the list returns to 10 readings.",
+      "scoring_guidance": "The answer must remove the oldest item, not the newest item."
+    },
+    {
+      "question_id": "q3",
+      "question_text": "Transfer: How would the logic change if the system needed the most recent seven readings?",
+      "question_type": "scenario_transfer",
+      "expected_answer": "Append the new reading, then remove the oldest reading when the list length is greater than seven.",
+      "scoring_guidance": "The answer should transfer the sliding-window rule from 10 to 7."
+    }
+  ]
+}

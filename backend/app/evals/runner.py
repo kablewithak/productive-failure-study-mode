@@ -79,6 +79,7 @@ def _run_one_case(*, engine: MockLearningEngine, case: EvalCase) -> EvalCaseResu
             quiz_id=stored_quiz.quiz_id,
             session_id=stored_quiz.session_id,
             questions=stored_quiz.questions,
+            source=stored_quiz.source,
             created_at=stored_quiz.created_at,
         )
         response = SubmitAttemptResponse(

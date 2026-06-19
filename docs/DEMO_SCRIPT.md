@@ -234,3 +234,19 @@ Say:
 ```text
 The browser UI is the demo surface. The backend contract is the core product behaviour.
 ```
+
+## Phase 6.5 source-grounded demo addendum
+
+When showing the browser demo, explicitly point out the source-grounding layer:
+
+1. On the session page, show the `Source used` card under the pre-instruction challenge.
+2. Submit an imperfect attempt.
+3. In the failure analysis card, show the detected rubric items and missing rubric gaps.
+4. In consolidation, show that the explanation and worked example are linked to the same sample source.
+5. In the quiz, show that each question carries a source citation while the answer key is still hidden.
+
+Suggested wording:
+
+```text
+The earlier prototype proved the flow. This version tightens the learning logic: each concept is backed by a small sample course pack with a source excerpt, rubric, canonical answer, worked example, and answer-keyed retrieval questions. It is not arbitrary upload/RAG yet, but it demonstrates the correct BAG-style behaviour: course material becomes structured learning events.
+```

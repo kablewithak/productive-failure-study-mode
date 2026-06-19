@@ -56,6 +56,55 @@ class HealthResponse(BaseModel):
     service: str = Field(description="Stable service identifier.")
 
 
+class SourceReference(BaseModel):
+    """Minimum source provenance exposed to the app and reviewer.
+
+    These are sample course-pack references, not user-uploaded private material.
+    """
+
+    source_id: str = Field(min_length=3)
+    title: str = Field(min_length=3)
+    citation_label: str = Field(min_length=3)
+    excerpt: str = Field(min_length=50)
+
+
+class RubricItem(BaseModel):
+    rubric_item_id: str = Field(min_length=2)
+    criterion: str = Field(min_length=10)
+    expected_markers: list[str] = Field(min_length=1)
+    feedback_if_missing: str = Field(min_length=10)
+    weight: int = Field(ge=1, le=5)
+
+
+class GroundedRetrievalSeed(BaseModel):
+    question_id: str = Field(min_length=2)
+    question_text: str = Field(min_length=10)
+    question_type: QuestionType
+    expected_answer: str = Field(min_length=10)
+    scoring_guidance: str = Field(min_length=10)
+
+
+class SampleCoursePack(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    concept_id: str = Field(min_length=3)
+    title: str = Field(min_length=3)
+    discipline: str = Field(min_length=3)
+    module_context: str = Field(min_length=3)
+    learning_outcome: str = Field(min_length=10)
+    prerequisite_knowledge: list[str] = Field(min_length=1)
+    challenge_type: ChallengeType
+    challenge_prompt: str = Field(min_length=20)
+    expected_reasoning_steps: list[str] = Field(min_length=1)
+    common_misconceptions: list[str] = Field(min_length=1)
+    canonical_explanation: str = Field(min_length=50)
+    canonical_answer: str = Field(min_length=30)
+    worked_example: str = Field(min_length=30)
+    source: SourceReference
+    rubric_items: list[RubricItem] = Field(min_length=2)
+    retrieval_questions: list[GroundedRetrievalSeed] = Field(min_length=3, max_length=3)
+
+
 class Concept(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -71,12 +120,18 @@ class Concept(BaseModel):
     common_misconceptions: list[str] = Field(min_length=1)
     canonical_explanation: str = Field(min_length=50)
     retrieval_question_seeds: list[str] = Field(min_length=3)
+    canonical_answer: str = Field(min_length=30)
+    worked_example: str = Field(min_length=30)
+    source: SourceReference
+    rubric_items: list[RubricItem] = Field(min_length=2)
+    retrieval_questions: list[GroundedRetrievalSeed] = Field(min_length=3, max_length=3)
 
 
 class ChallengePreview(BaseModel):
     concept_id: str
     challenge_type: ChallengeType
     challenge_prompt: str
+    source: SourceReference
 
 
 class ConceptSummary(BaseModel):
@@ -86,6 +141,8 @@ class ConceptSummary(BaseModel):
     module_context: str
     learning_outcome: str
     challenge_type: ChallengeType
+    source_title: str
+    source_citation_label: str
 
 
 class ConceptListResponse(BaseModel):
@@ -141,6 +198,9 @@ class FailureAnalysis(BaseModel):
     productive_failure_score: int = Field(ge=1, le=5)
     feedback_strategy: str
     should_consolidate: bool
+    source: SourceReference
+    matched_rubric_items: list[str]
+    missing_rubric_items: list[str]
     created_at: datetime
 
 
@@ -153,6 +213,7 @@ class ConsolidationResponse(BaseModel):
     explanation: str
     worked_example: str
     immediate_retrieval_prompt: str
+    source: SourceReference
     created_at: datetime
 
 
@@ -161,18 +222,21 @@ class QuizQuestion(BaseModel):
     question_text: str
     question_type: QuestionType
     options: list[str] | None = None
+    source_citation_label: str | None = None
 
 
 class QuizAnswer(BaseModel):
     question_id: str
     expected_answer: str
     scoring_guidance: str
+    source_citation_label: str | None = None
 
 
 class RetrievalQuiz(BaseModel):
     quiz_id: str
     session_id: str
     questions: list[QuizQuestion] = Field(min_length=3, max_length=3)
+    source: SourceReference
     created_at: datetime
 
 

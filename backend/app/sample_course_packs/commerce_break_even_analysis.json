@@ -1,0 +1,112 @@
+{
+  "concept_id": "commerce_break_even_analysis",
+  "title": "Break-even analysis",
+  "discipline": "Commerce",
+  "module_context": "Business Accounting and Economics",
+  "learning_outcome": "Calculate and interpret the break-even point using fixed costs, selling price, and variable cost per unit.",
+  "prerequisite_knowledge": [
+    "revenue",
+    "fixed costs",
+    "variable costs",
+    "basic algebra"
+  ],
+  "challenge_type": "calculation_attempt",
+  "challenge_prompt": "A student business sells study packs for R120 each. Each pack costs R45 to print, and the business pays R3,000 once-off for design and setup. Before receiving the formula, estimate how many packs must be sold before the business stops making a loss. Explain your reasoning.",
+  "expected_reasoning_steps": [
+    "Separate fixed costs from variable costs.",
+    "Calculate contribution per unit as selling price minus variable cost.",
+    "Divide fixed costs by contribution per unit.",
+    "Interpret the result as the number of units needed to cover total fixed costs."
+  ],
+  "common_misconceptions": [
+    "Dividing fixed cost by selling price instead of contribution per unit.",
+    "Treating variable cost as if it happens only once.",
+    "Giving a number without explaining what it means."
+  ],
+  "canonical_explanation": "Break-even happens when total revenue equals total cost. Each unit contributes selling price minus variable cost toward fixed costs. The break-even units are fixed costs divided by contribution per unit. The result should be interpreted as the number of units needed before profit is zero.",
+  "canonical_answer": "The contribution per study pack is R120 minus R45, which is R75. The fixed setup cost is R3,000. Break-even units are R3,000 divided by R75, so the business must sell 40 packs to break even.",
+  "worked_example": "If fixed costs are R3,000 and each unit contributes R75 after variable cost, break-even is 3,000 / 75 = 40 units.",
+  "source": {
+    "source_id": "sample-commerce-breakeven-001",
+    "title": "Sample Commerce Notes: Break-even Analysis",
+    "citation_label": "Sample Commerce Notes - Section 2",
+    "excerpt": "Break-even analysis separates fixed costs from variable costs. Contribution per unit is calculated as selling price per unit minus variable cost per unit. Break-even units are fixed costs divided by contribution per unit. Using selling price alone overstates the contribution because variable cost must still be paid on each unit sold."
+  },
+  "rubric_items": [
+    {
+      "rubric_item_id": "fixed_cost",
+      "criterion": "Identifies fixed setup cost",
+      "expected_markers": [
+        "fixed",
+        "setup",
+        "once-off",
+        "3000",
+        "r3,000"
+      ],
+      "feedback_if_missing": "Identify the R3,000 setup cost as the fixed cost that must be recovered.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "variable_cost",
+      "criterion": "Identifies variable cost per unit",
+      "expected_markers": [
+        "variable",
+        "print",
+        "printing",
+        "45",
+        "r45"
+      ],
+      "feedback_if_missing": "Recognize that R45 is paid for every pack, so it reduces contribution.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "contribution",
+      "criterion": "Calculates contribution per unit",
+      "expected_markers": [
+        "contribution",
+        "120-45",
+        "120 minus 45",
+        "75",
+        "r75"
+      ],
+      "feedback_if_missing": "Calculate contribution as selling price minus variable cost: R120 - R45 = R75.",
+      "weight": 2
+    },
+    {
+      "rubric_item_id": "break_even_units",
+      "criterion": "Divides fixed cost by contribution and interprets units",
+      "expected_markers": [
+        "40",
+        "3000/75",
+        "3000 divided by 75",
+        "packs",
+        "units"
+      ],
+      "feedback_if_missing": "Divide R3,000 by R75 and interpret the result as packs sold.",
+      "weight": 2
+    }
+  ],
+  "retrieval_questions": [
+    {
+      "question_id": "q1",
+      "question_text": "Why does break-even use contribution per unit rather than selling price?",
+      "question_type": "short_answer",
+      "expected_answer": "Because each unit has a variable cost, only selling price minus variable cost contributes toward fixed costs.",
+      "scoring_guidance": "Look for variable cost reducing contribution."
+    },
+    {
+      "question_id": "q2",
+      "question_text": "What happens to the break-even point if printing cost increases?",
+      "question_type": "short_answer",
+      "expected_answer": "Contribution per unit falls, so more units must be sold to break even.",
+      "scoring_guidance": "The answer should connect higher variable cost to lower contribution and higher break-even units."
+    },
+    {
+      "question_id": "q3",
+      "question_text": "Transfer: A product sells for R80, has R30 variable cost, and R2,500 fixed cost. Calculate break-even units.",
+      "question_type": "scenario_transfer",
+      "expected_answer": "Contribution is R80 - R30 = R50, so break-even is R2,500 / R50 = 50 units.",
+      "scoring_guidance": "The answer should calculate contribution first, then divide fixed cost by contribution."
+    }
+  ]
+}

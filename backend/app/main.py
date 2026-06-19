@@ -267,6 +267,8 @@ def _concept_summary(concept: Concept) -> ConceptSummary:
         module_context=concept.module_context,
         learning_outcome=concept.learning_outcome,
         challenge_type=concept.challenge_type,
+        source_title=concept.source.title,
+        source_citation_label=concept.source.citation_label,
     )
 
 
@@ -275,6 +277,7 @@ def _challenge_preview(concept: Concept) -> ChallengePreview:
         concept_id=concept.concept_id,
         challenge_type=concept.challenge_type,
         challenge_prompt=concept.challenge_prompt,
+        source=concept.source,
     )
 
 
@@ -283,6 +286,7 @@ def _public_quiz(stored_quiz) -> RetrievalQuiz:
         quiz_id=stored_quiz.quiz_id,
         session_id=stored_quiz.session_id,
         questions=stored_quiz.questions,
+        source=stored_quiz.source,
         created_at=stored_quiz.created_at,
     )
 

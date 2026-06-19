@@ -40,7 +40,7 @@ It is not production-ready.
 It is not POPIA compliant.
 It does not replace BAG Learning or Zazi.
 It has not been tested with real students.
-It does not use real course uploads or copyrighted university material.
+It does not use real course uploads or copyrighted university material. It uses bundled sample course packs written specifically for this demo.
 
 Correct claim:
 
@@ -53,7 +53,7 @@ Correct claim:
 | Frontend | Next.js, React, TypeScript, Tailwind |
 | Backend | FastAPI, Pydantic v2 |
 | Persistence | Local JSON adapter behind repository boundary |
-| AI mode | Deterministic mock learning engine |
+| AI mode | Deterministic source-grounded mock learning engine |
 | Eval harness | Fixed diagnostic cases against mock engine |
 | Local development | Windows PowerShell, VS Code, GitHub |
 
@@ -222,8 +222,8 @@ The intended academic posture is:
 
 ## Next production-shaped steps
 
-1. Add real course-material grounding through a RAG boundary.
-2. Add source citations and unsupported fallback behaviour.
+1. Replace bundled sample course packs with a real upload/RAG boundary.
+2. Add retrieval ranking, citations, and unsupported fallback behaviour.
 3. Add spaced retrieval follow-ups after the first session.
 4. Add Supabase/Postgres persistence behind the existing repository contract.
 5. Add real student outcome evals before making learning-effectiveness claims.

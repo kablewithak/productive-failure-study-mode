@@ -1,0 +1,114 @@
+{
+  "concept_id": "law_offer_acceptance",
+  "title": "Offer and acceptance",
+  "discipline": "Law",
+  "module_context": "Contract Law",
+  "learning_outcome": "Identify whether a valid offer has been accepted and explain why the facts do or do not show agreement.",
+  "prerequisite_knowledge": [
+    "basic contract formation",
+    "intention to create legal relations",
+    "communication between parties"
+  ],
+  "challenge_type": "case_application",
+  "challenge_prompt": "A seller emails: 'I can sell you my laptop for R5,000 if you confirm by Friday.' The buyer replies on Friday: 'Sounds good, but can you include the laptop bag?' Before receiving the full explanation, decide whether the buyer accepted the offer and explain your reasoning.",
+  "expected_reasoning_steps": [
+    "Identify the seller's statement as a definite offer.",
+    "Check whether the buyer's reply matches the material terms of the offer.",
+    "Distinguish acceptance from a counter-offer or further negotiation.",
+    "Explain whether consensus was reached on the same terms."
+  ],
+  "common_misconceptions": [
+    "Treating any positive-sounding reply as acceptance.",
+    "Ignoring changed or added terms.",
+    "Confusing negotiation with final agreement."
+  ],
+  "canonical_explanation": "Acceptance must correspond with the material terms of the offer. A reply that changes those terms is usually not an unequivocal acceptance; it may be a counter-offer or further negotiation. The legal question is whether the offeree agreed to the same offer, not merely whether both parties were interested in dealing.",
+  "canonical_answer": "The buyer has probably not accepted the original offer. The seller made a possible offer to sell the laptop for R5,000 if confirmed by Friday, but the buyer's reply adds a laptop bag. Because the reply changes or qualifies the terms, it is better treated as negotiation or a counter-offer unless the added term is clearly separate from acceptance.",
+  "worked_example": "If a seller offers a phone for R2,000 and the buyer replies, 'I accept for R2,000,' that is acceptance. If the buyer replies, 'I accept if you include headphones,' the buyer has changed the terms and the reply is not a clean acceptance of the original offer.",
+  "source": {
+    "source_id": "sample-law-contract-001",
+    "title": "Sample Contract Law Notes: Offer and Acceptance",
+    "citation_label": "Sample Law Notes - Section 1",
+    "excerpt": "For a contract to form through offer and acceptance, the acceptance must be clear, communicated, and correspond with the material terms of the offer. A response that changes the terms is generally a counter-offer or further negotiation rather than acceptance. A positive tone alone is not enough; the offeree must agree to the same bargain proposed by the offeror."
+  },
+  "rubric_items": [
+    {
+      "rubric_item_id": "offer",
+      "criterion": "Identifies a definite offer",
+      "expected_markers": [
+        "offer",
+        "seller",
+        "r5,000",
+        "5000",
+        "confirm by friday"
+      ],
+      "feedback_if_missing": "Start by naming the seller's statement as the possible offer.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "match_terms",
+      "criterion": "Checks whether the reply matches material terms",
+      "expected_markers": [
+        "same terms",
+        "match",
+        "material",
+        "changed",
+        "include the laptop bag",
+        "bag"
+      ],
+      "feedback_if_missing": "Check whether the buyer accepted the same terms or added a new term.",
+      "weight": 2
+    },
+    {
+      "rubric_item_id": "counter_offer",
+      "criterion": "Distinguishes acceptance from counter-offer or negotiation",
+      "expected_markers": [
+        "counter",
+        "counter-offer",
+        "not acceptance",
+        "not accepted",
+        "negotiation",
+        "further negotiation"
+      ],
+      "feedback_if_missing": "Name the legal consequence: the changed reply is likely negotiation or a counter-offer.",
+      "weight": 2
+    },
+    {
+      "rubric_item_id": "communication",
+      "criterion": "Explains consensus on the same terms",
+      "expected_markers": [
+        "consensus",
+        "agreement",
+        "same bargain",
+        "communicated",
+        "unequivocal",
+        "agree"
+      ],
+      "feedback_if_missing": "Conclude by explaining whether there was consensus on the same bargain.",
+      "weight": 1
+    }
+  ],
+  "retrieval_questions": [
+    {
+      "question_id": "q1",
+      "question_text": "What makes an acceptance different from a counter-offer?",
+      "question_type": "short_answer",
+      "expected_answer": "Acceptance agrees to the offer's material terms, while a counter-offer changes or qualifies those terms.",
+      "scoring_guidance": "Look for same terms versus changed terms."
+    },
+    {
+      "question_id": "q2",
+      "question_text": "Why is a positive-sounding reply not always legal acceptance?",
+      "question_type": "short_answer",
+      "expected_answer": "A positive tone is not enough if the reply changes the terms or does not clearly communicate agreement to the offer.",
+      "scoring_guidance": "The answer should mention clear communication and matching material terms."
+    },
+    {
+      "question_id": "q3",
+      "question_text": "Transfer: A landlord offers a flat from 1 July. The tenant says, 'Great, if I can move in on 15 July.' Is that clean acceptance? Explain.",
+      "question_type": "scenario_transfer",
+      "expected_answer": "It is likely not clean acceptance because the tenant changed a material term, the move-in date, so it is negotiation or a counter-offer.",
+      "scoring_guidance": "The answer should apply the same term-matching rule to new facts."
+    }
+  ]
+}
