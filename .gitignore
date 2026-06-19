@@ -37,3 +37,6 @@ Thumbs.db
 .eggs/
 build/
 dist/
+
+# TypeScript build artifacts
+*.tsbuildinfo
