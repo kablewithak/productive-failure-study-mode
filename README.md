@@ -103,6 +103,7 @@ Create and activate the Python environment:
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python --version
 python -m pip install --upgrade pip
 python -m pip install -e ".\backend[dev]"
 ```
@@ -113,6 +114,35 @@ Install frontend dependencies:
 cd frontend
 npm install
 cd ..
+```
+
+
+## Python environment troubleshooting
+
+This project has been validated with Python 3.11.
+
+If the backend fails with an error like:
+
+```text
+ModuleNotFoundError: No module named 'pydantic_core._pydantic_core'
+```
+
+the virtual environment is probably stale, corrupted, or created with a different Python version. Delete and recreate it with Python 3.11:
+
+```powershell
+deactivate
+Remove-Item ".\.venv" -Recurse -Force
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python --version
+python -m pip install --upgrade pip
+python -m pip install -e ".\backend[dev]"
+```
+
+Expected Python version:
+
+```text
+Python 3.11.x
 ```
 
 ## Run the backend
