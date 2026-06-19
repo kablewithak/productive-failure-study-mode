@@ -169,3 +169,27 @@ It proves:
 ```text
 the local prototype implements the intended learning loop with typed contracts, deterministic mock AI, persistence, dashboard metrics, and regression-oriented eval checks.
 ```
+
+## Phase 6.5 source-grounding validation
+
+Additional validation added:
+
+- sample course packs validate through `SampleCoursePack`
+- every seeded concept has source provenance
+- every concept has rubric items
+- every concept has exactly three grounded retrieval questions
+- every concept includes at least one transfer question
+- attempt analysis returns matched and missing rubric items
+- consolidation includes source provenance
+- public quizzes include source provenance but not the hidden answer key
+- eval harness remains deterministic and passes the fixed 10-case suite
+
+Expected local gate after Phase 6.5:
+
+```text
+python -m pytest .\backend\tests
+python -m app.evals.runner
+cd frontend
+npm run typecheck
+npm run build
+```

@@ -23,6 +23,29 @@ export type SessionStatus = "created" | "attempt_submitted" | "consolidated" | "
 export type QuestionType = "short_answer" | "multiple_choice" | "scenario_transfer" | "calculation";
 export type MasteryEstimate = "needs_review" | "developing" | "almost_there" | "secure";
 
+export interface SourceReference {
+  source_id: string;
+  title: string;
+  citation_label: string;
+  excerpt: string;
+}
+
+export interface RubricItem {
+  rubric_item_id: string;
+  criterion: string;
+  expected_markers: string[];
+  feedback_if_missing: string;
+  weight: number;
+}
+
+export interface GroundedRetrievalSeed {
+  question_id: string;
+  question_text: string;
+  question_type: QuestionType;
+  expected_answer: string;
+  scoring_guidance: string;
+}
+
 export interface Concept {
   concept_id: string;
   title: string;
@@ -36,6 +59,11 @@ export interface Concept {
   common_misconceptions: string[];
   canonical_explanation: string;
   retrieval_question_seeds: string[];
+  canonical_answer: string;
+  worked_example: string;
+  source: SourceReference;
+  rubric_items: RubricItem[];
+  retrieval_questions: GroundedRetrievalSeed[];
 }
 
 export interface ConceptSummary {
@@ -45,26 +73,21 @@ export interface ConceptSummary {
   module_context: string;
   learning_outcome: string;
   challenge_type: ChallengeType;
+  source_title: string;
+  source_citation_label: string;
 }
 
 export interface ChallengePreview {
   concept_id: string;
   challenge_type: ChallengeType;
   challenge_prompt: string;
+  source: SourceReference;
 }
 
 export interface CreateSessionResponse {
   session_id: string;
   concept: ConceptSummary;
   challenge: ChallengePreview;
-}
-
-
-export interface SubmitAttemptResponse {
-  attempt_id: string;
-  failure_analysis: FailureAnalysis;
-  consolidation: ConsolidationResponse;
-  retrieval_quiz: RetrievalQuiz;
 }
 
 export interface LearningSession {
@@ -95,6 +118,9 @@ export interface FailureAnalysis {
   productive_failure_score: number;
   feedback_strategy: string;
   should_consolidate: boolean;
+  source: SourceReference;
+  matched_rubric_items: string[];
+  missing_rubric_items: string[];
   created_at: string;
 }
 
@@ -107,6 +133,7 @@ export interface ConsolidationResponse {
   explanation: string;
   worked_example: string;
   immediate_retrieval_prompt: string;
+  source: SourceReference;
   created_at: string;
 }
 
@@ -115,13 +142,22 @@ export interface QuizQuestion {
   question_text: string;
   question_type: QuestionType;
   options: string[] | null;
+  source_citation_label: string | null;
 }
 
 export interface RetrievalQuiz {
   quiz_id: string;
   session_id: string;
   questions: QuizQuestion[];
+  source: SourceReference;
   created_at: string;
+}
+
+export interface SubmitAttemptResponse {
+  attempt_id: string;
+  failure_analysis: FailureAnalysis;
+  consolidation: ConsolidationResponse;
+  retrieval_quiz: RetrievalQuiz;
 }
 
 export interface QuizResultFeedback {

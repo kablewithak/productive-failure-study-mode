@@ -7,7 +7,7 @@ import { LoadingPanel } from "@/components/loading-panel";
 import { PageHeader } from "@/components/page-header";
 import { getSessionTrace, submitAttempt, submitQuiz } from "@/lib/api";
 import { labelize } from "@/lib/format";
-import type { QuizQuestion, SessionTraceResponse } from "@/lib/types";
+import type { QuizQuestion, SessionTraceResponse, SourceReference } from "@/lib/types";
 
 export default function SessionPage() {
   const params = useParams<{ id: string }>();
@@ -103,16 +103,21 @@ export default function SessionPage() {
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             Status: {labelize(trace.session.status)}
           </span>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+            Source: {trace.concept.source_citation_label}
+          </span>
         </div>
         <h2 className="mt-5 text-lg font-semibold text-slate-950">Pre-instruction challenge</h2>
         <p className="mt-3 leading-7 text-slate-700">{trace.challenge.challenge_prompt}</p>
+        <SourceBox source={trace.challenge.source} />
       </section>
 
       {!trace.attempt ? (
         <form onSubmit={handleAttemptSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-panel">
           <h2 className="text-lg font-semibold text-slate-950">Your attempt</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            The full explanation is intentionally hidden until you make a meaningful attempt.
+            The full explanation is intentionally hidden until you make a meaningful attempt. Your answer will be checked
+            against source-backed rubric items, not a generic chat response.
           </p>
           <textarea
             value={attemptText}
@@ -161,13 +166,17 @@ export default function SessionPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <Metric label="Failure label" value={labelize(trace.failure_analysis.failure_label)} />
             <Metric label="Productive failure score" value={`${trace.failure_analysis.productive_failure_score} / 5`} />
-            <Metric label="Consolidation" value={trace.failure_analysis.should_consolidate ? "Proceed" : "Hold"} />
+            <Metric label="Source" value={trace.failure_analysis.source.citation_label} />
           </div>
           <p className="mt-5 leading-7 text-slate-700">{trace.failure_analysis.misconception_summary}</p>
           <p className="mt-3 text-sm leading-6 text-slate-600">
             <span className="font-semibold text-slate-950">Missing concept: </span>
             {trace.failure_analysis.missing_concept}
           </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <ListPanel title="Rubric items detected" items={trace.failure_analysis.matched_rubric_items} />
+            <ListPanel title="Rubric gaps to fix" items={trace.failure_analysis.missing_rubric_items} />
+          </div>
         </section>
       ) : null}
 
@@ -188,6 +197,7 @@ export default function SessionPage() {
             <span className="font-semibold">Immediate retrieval prompt: </span>
             {trace.consolidation.immediate_retrieval_prompt}
           </div>
+          <SourceBox source={trace.consolidation.source} />
         </section>
       ) : null}
 
@@ -195,8 +205,9 @@ export default function SessionPage() {
         <form onSubmit={handleQuizSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-panel">
           <h2 className="text-lg font-semibold text-slate-950">Retrieval quiz</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            The answer key remains hidden until submission. At least one question requires transfer to a new situation.
+            The answer key remains hidden until submission. The questions come from the same sample source pack.
           </p>
+          <SourceBox source={trace.retrieval_quiz.source} />
           <div className="mt-5 space-y-5">
             {trace.retrieval_quiz.questions.map((question, index) => (
               <QuestionAnswer
@@ -240,6 +251,16 @@ export default function SessionPage() {
   );
 }
 
+function SourceBox({ source }: { source: SourceReference }) {
+  return (
+    <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+      <p className="font-semibold">Source used: {source.title}</p>
+      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-amber-700">{source.citation_label}</p>
+      <p className="mt-2">{source.excerpt}</p>
+    </div>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-slate-50 p-4">
@@ -254,9 +275,7 @@ function ListPanel({ title, items }: { title: string; items: string[] }) {
     <div className="rounded-xl bg-slate-50 p-4">
       <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
       <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-        {items.map((item) => (
-          <li key={item}>• {item}</li>
-        ))}
+        {items.length > 0 ? items.map((item) => <li key={item}>• {item}</li>) : <li>• No major gap detected.</li>}
       </ul>
     </div>
   );
@@ -279,6 +298,9 @@ function QuestionAnswer({
         Question {index + 1} · {labelize(question.question_type)}
       </span>
       <span className="mt-2 block leading-7 text-slate-800">{question.question_text}</span>
+      {question.source_citation_label ? (
+        <span className="mt-2 block text-xs font-semibold text-slate-500">Source: {question.source_citation_label}</span>
+      ) : null}
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}

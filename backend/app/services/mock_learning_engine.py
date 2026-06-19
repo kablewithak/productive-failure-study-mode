@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import uuid4
 
@@ -9,22 +10,30 @@ from app.models import (
     FailureAnalysis,
     FailureLabel,
     MasteryEstimate,
-    QuestionType,
     QuizAnswer,
     QuizQuestion,
     QuizResultFeedback,
     QuizSubmittedAnswer,
+    RubricItem,
     StoredRetrievalQuiz,
     StudentAttempt,
 )
 from app.time_utils import utc_now
 
 
-class MockLearningEngine:
-    """Deterministic mock AI boundary for the Productive Failure loop.
+@dataclass(frozen=True)
+class RubricMatchResult:
+    matched_items: list[RubricItem]
+    missing_items: list[RubricItem]
 
-    The goal is not model cleverness. The goal is stable structured outputs that
-    can drive the frontend and eval harness without API keys.
+
+class MockLearningEngine:
+    """Deterministic source-grounded mock AI boundary.
+
+    The engine does not call an LLM. It reads bundled sample course-pack fields,
+    checks attempts against explicit rubric markers, and returns typed outputs.
+    This keeps the demo inspectable while proving the correct product behaviour:
+    questions, consolidation, and answer keys are grounded in source material.
     """
 
     def build_attempt_outputs(
@@ -34,9 +43,11 @@ class MockLearningEngine:
         attempt: StudentAttempt,
     ) -> tuple[FailureAnalysis, ConsolidationResponse, StoredRetrievalQuiz]:
         now = utc_now()
+        rubric_result = self._match_rubric(concept=concept, attempt_text=attempt.attempt_text)
         failure_label, score, prior_knowledge, missing_concept, misconception = self._classify_attempt(
             concept=concept,
             attempt_text=attempt.attempt_text,
+            rubric_result=rubric_result,
         )
 
         analysis = FailureAnalysis(
@@ -49,12 +60,16 @@ class MockLearningEngine:
             productive_failure_score=score,
             feedback_strategy=self._feedback_strategy(failure_label),
             should_consolidate=True,
+            source=concept.source,
+            matched_rubric_items=[item.criterion for item in rubric_result.matched_items],
+            missing_rubric_items=[item.feedback_if_missing for item in rubric_result.missing_items],
             created_at=now,
         )
 
         consolidation = self._build_consolidation(
             concept=concept,
             analysis=analysis,
+            rubric_result=rubric_result,
             created_at=now,
         )
         quiz = self._build_quiz(concept=concept, session_id=attempt.session_id, created_at=now)
@@ -76,11 +91,12 @@ class MockLearningEngine:
             expected_tokens = self._content_tokens(answer_key.expected_answer)
             matched_tokens = [token for token in expected_tokens if token in submitted]
             is_correct = len(matched_tokens) >= max(1, min(2, len(expected_tokens)))
+            source_note = f" Source: {answer_key.source_citation_label}." if answer_key.source_citation_label else ""
             if is_correct:
                 correct_count += 1
-                feedback.append(f"{question_id}: acceptable retrieval. {answer_key.scoring_guidance}")
+                feedback.append(f"{question_id}: acceptable retrieval. {answer_key.scoring_guidance}{source_note}")
             else:
-                feedback.append(f"{question_id}: revise this point. {answer_key.scoring_guidance}")
+                feedback.append(f"{question_id}: revise this point. {answer_key.scoring_guidance}{source_note}")
 
         score = correct_count / len(answer_key_by_id)
         mastery = self._mastery_from_score(score)
@@ -96,13 +112,27 @@ class MockLearningEngine:
             created_at=utc_now(),
         )
 
+    def _match_rubric(self, *, concept: Concept, attempt_text: str) -> RubricMatchResult:
+        normalized = self._normalize(attempt_text)
+        matched: list[RubricItem] = []
+        missing: list[RubricItem] = []
+        for item in concept.rubric_items:
+            markers = [self._normalize(marker) for marker in item.expected_markers]
+            if any(marker and marker in normalized for marker in markers):
+                matched.append(item)
+            else:
+                missing.append(item)
+        return RubricMatchResult(matched_items=matched, missing_items=missing)
+
     def _classify_attempt(
         self,
         *,
         concept: Concept,
         attempt_text: str,
+        rubric_result: RubricMatchResult,
     ) -> tuple[FailureLabel, int, list[str], str, str]:
         text = attempt_text.lower()
+        normalized = self._normalize(attempt_text)
         if any(phrase in text for phrase in ["just tell me", "give me the answer", "explain first"]):
             return (
                 FailureLabel.UNSUPPORTED_GUESS,
@@ -112,125 +142,137 @@ class MockLearningEngine:
                 "The response tries to bypass the attempt-first learning step.",
             )
 
+        matched = rubric_result.matched_items
+        missing = rubric_result.missing_items
+        prior_knowledge = [item.criterion for item in matched] or ["engaged with the source-grounded challenge"]
+        missing_feedback = missing[0].feedback_if_missing if missing else "Move from correctness into transfer practice."
+        missing_concept = missing_feedback
+        misconception = self._misconception_summary(concept=concept, missing_items=missing)
+
         if concept.concept_id == "law_offer_acceptance":
-            if any(term in text for term in ["counter", "not accept", "not acceptance", "changed", "material"]):
-                return (
-                    FailureLabel.STRONG_ATTEMPT,
-                    5,
-                    ["spotted that acceptance must match the offer"],
-                    "Use precise acceptance versus counter-offer language.",
-                    "The core rule is present; the answer can be tightened with legal terminology.",
-                )
-            if any(term in text for term in ["agree", "accepted", "sounds good"]):
+            if any(term in text for term in ["agree", "accepted", "sounds good"]) and not any(
+                term in text for term in ["counter", "counter-offer", "changed", "material", "not acceptance", "not accepted"]
+            ):
                 return (
                     FailureLabel.PARTIAL_PRIOR_KNOWLEDGE,
                     3,
-                    ["recognized that agreement matters"],
+                    prior_knowledge,
                     "Acceptance must match the offer's material terms.",
-                    "The answer treats interest in the deal as enough for acceptance.",
+                    "The answer treats interest in the deal as enough for acceptance unless changed terms are checked explicitly.",
                 )
-            return (
-                FailureLabel.MISSING_CORE_CONCEPT,
-                2,
-                ["engaged with the facts"],
-                "The mirror-image idea behind acceptance is missing.",
-                "The attempt does not yet separate negotiation from final agreement.",
-            )
 
         if concept.concept_id == "commerce_break_even_analysis":
-            if "75" in text or "contribution" in text or "120-45" in text.replace(" ", ""):
+            matched_ids = {item.rubric_item_id for item in matched}
+            if "contribution" in matched_ids and ("75" in normalized.split() or "contribution" in text):
                 return (
                     FailureLabel.STRONG_ATTEMPT,
                     5,
-                    ["identified contribution per unit"],
-                    "Round up units where a whole number of sales is required.",
-                    "The core break-even structure is present.",
+                    prior_knowledge,
+                    missing_concept,
+                    "The contribution-per-unit structure is present; add fixed-cost division and units if missing.",
                 )
-            if "3000/120" in text.replace(" ", "") or "25" in text:
+            if "3000 120" in normalized or "3000/120" in text.replace(" ", "") or "25" in normalized.split():
                 return (
                     FailureLabel.MISAPPLIED_RULE_OR_FORMULA,
                     2,
-                    ["recognized fixed cost must be recovered"],
+                    prior_knowledge,
                     "Break-even uses contribution per unit, not selling price.",
                     "The calculation ignores that each unit also has a variable cost.",
                 )
-            return (
-                FailureLabel.CALCULATION_WITHOUT_REASONING,
-                2,
-                ["attempted a numerical solution"],
-                "Separate fixed cost, selling price, and variable cost before calculating.",
-                "The answer does not show why the chosen operation fits break-even.",
-            )
-
-        if concept.concept_id == "engineering_moments":
-            if "10" in text or "20*0.5" in text.replace(" ", "") or "20 x 0.5" in text:
+            if any(token.isdigit() for token in normalized.split()) and len(matched) < 2:
                 return (
-                    FailureLabel.STRONG_ATTEMPT,
-                    5,
-                    ["connected force and distance"],
-                    "State the unit as newton-metres and mention direction where relevant.",
-                    "The calculation is basically correct but should include interpretation.",
-                )
-            if "force" in text and "distance" not in text:
-                return (
-                    FailureLabel.SURFACE_LEVEL_ANSWER,
+                    FailureLabel.CALCULATION_WITHOUT_REASONING,
                     2,
-                    ["recognized force matters"],
-                    "The distance from the pivot is also required.",
-                    "The answer describes pushing harder but misses lever arm distance.",
+                    prior_knowledge,
+                    missing_concept,
+                    "The answer gives arithmetic before identifying the cost structure.",
                 )
-            return (
-                FailureLabel.MISSING_CORE_CONCEPT,
-                2,
-                ["identified a turning situation"],
-                "Moment depends on force multiplied by perpendicular distance.",
-                "The attempt does not yet connect turning effect to both variables.",
-            )
 
         if concept.concept_id == "python_lists_sliding_window":
-            if any(term in text for term in ["append", "pop", "remove first", "oldest", "len"]):
-                return (
-                    FailureLabel.CORRECT_BUT_INCOMPLETE,
-                    4,
-                    ["recognized the need for an ordered collection"],
-                    "Make the add-then-trim loop explicit.",
-                    "The answer is close but should state the full update rule.",
-                )
-            if any(term in text for term in ["string", "variable", "ten variables", "separate"]):
+            matched_ids = {item.rubric_item_id for item in matched}
+            if any(term in text for term in ["string", "ten variables", "separate variables"]):
                 return (
                     FailureLabel.WRONG_REPRESENTATION,
                     2,
-                    ["recognized multiple readings must be stored"],
+                    prior_knowledge,
                     "Use one ordered list rather than separate variables or a string.",
                     "The representation makes updates brittle once new readings arrive.",
                 )
+            if {"ordered_collection", "append_new", "remove_oldest"}.issubset(matched_ids) and "length_check" not in matched_ids:
+                return (
+                    FailureLabel.CORRECT_BUT_INCOMPLETE,
+                    4,
+                    prior_knowledge,
+                    "Make the length check and add-then-trim loop explicit.",
+                    "The representation is right, but the update rule still needs the exact condition for trimming the list.",
+                )
+
+        if concept.concept_id == "engineering_moments":
+            if "force" in text and not any(item.rubric_item_id == "distance" for item in matched):
+                return (
+                    FailureLabel.SURFACE_LEVEL_ANSWER,
+                    2,
+                    prior_knowledge,
+                    "The distance from the pivot is also required.",
+                    "The answer describes pushing harder but misses lever arm distance.",
+                )
+
+        weighted_total = sum(item.weight for item in concept.rubric_items)
+        weighted_matched = sum(item.weight for item in matched)
+        ratio = weighted_matched / weighted_total if weighted_total else 0.0
+
+        if ratio >= 0.8:
+            return (
+                FailureLabel.STRONG_ATTEMPT,
+                5,
+                prior_knowledge,
+                missing_concept,
+                "The core source-grounded rule is present; tighten precision and transfer it.",
+            )
+        if ratio >= 0.5:
+            return (
+                FailureLabel.CORRECT_BUT_INCOMPLETE,
+                4,
+                prior_knowledge,
+                missing_concept,
+                misconception,
+            )
+        if ratio > 0:
             return (
                 FailureLabel.PARTIAL_PRIOR_KNOWLEDGE,
                 3,
-                ["recognized that old readings must be discarded"],
-                "Use a list as the state container for the sliding window.",
-                "The attempt captures the goal but not the data structure.",
+                prior_knowledge,
+                missing_concept,
+                misconception,
             )
-
         return (
-            FailureLabel.UNSUPPORTED_GUESS,
-            1,
-            [],
-            "No deterministic mock rule exists for this concept.",
-            "The mock learning engine only supports seeded Phase 1 concepts.",
+            FailureLabel.MISSING_CORE_CONCEPT,
+            2,
+            prior_knowledge,
+            missing_concept,
+            misconception,
+        )
+
+    def _misconception_summary(self, *, concept: Concept, missing_items: list[RubricItem]) -> str:
+        if not missing_items:
+            return "The answer is mostly aligned with the sample source; the next step is transfer practice."
+        first_missing = missing_items[0]
+        return (
+            f"The attempt has not yet shown this source-grounded criterion: {first_missing.criterion}. "
+            f"{first_missing.feedback_if_missing}"
         )
 
     def _feedback_strategy(self, failure_label: FailureLabel) -> str:
         strategies = {
-            FailureLabel.MISSING_CORE_CONCEPT: "Name the missing concept, then connect it to the student's facts.",
-            FailureLabel.MISAPPLIED_RULE_OR_FORMULA: "Preserve the useful setup, then correct the formula boundary.",
-            FailureLabel.WRONG_REPRESENTATION: "Compare the chosen representation with the canonical representation.",
+            FailureLabel.MISSING_CORE_CONCEPT: "Name the missing source-grounded concept, then connect it to the student's facts.",
+            FailureLabel.MISAPPLIED_RULE_OR_FORMULA: "Preserve the useful setup, then correct the formula boundary using the course-pack rubric.",
+            FailureLabel.WRONG_REPRESENTATION: "Compare the chosen representation with the source-backed canonical representation.",
             FailureLabel.UNSUPPORTED_GUESS: "Redirect to an attempt-first response without giving the full answer first.",
             FailureLabel.SURFACE_LEVEL_ANSWER: "Ask for the causal mechanism behind the surface observation.",
-            FailureLabel.PARTIAL_PRIOR_KNOWLEDGE: "Turn the partial intuition into the formal rule.",
-            FailureLabel.CONFUSES_SIMILAR_CONCEPTS: "Separate the two concepts with a contrastive example.",
+            FailureLabel.PARTIAL_PRIOR_KNOWLEDGE: "Turn the partial intuition into the formal source-grounded rule.",
+            FailureLabel.CONFUSES_SIMILAR_CONCEPTS: "Separate the two concepts with a contrastive example from the source.",
             FailureLabel.CALCULATION_WITHOUT_REASONING: "Require variable identification before arithmetic.",
-            FailureLabel.CORRECT_BUT_INCOMPLETE: "Acknowledge correctness and add the missing condition or interpretation.",
+            FailureLabel.CORRECT_BUT_INCOMPLETE: "Acknowledge correctness and add the missing rubric criterion.",
             FailureLabel.STRONG_ATTEMPT: "Tighten precision and move quickly to transfer practice.",
         }
         return strategies[failure_label]
@@ -240,20 +282,24 @@ class MockLearningEngine:
         *,
         concept: Concept,
         analysis: FailureAnalysis,
+        rubric_result: RubricMatchResult,
         created_at: datetime,
     ) -> ConsolidationResponse:
-        first_seed = concept.retrieval_question_seeds[0]
+        first_question = concept.retrieval_questions[0]
+        useful = [item.criterion for item in rubric_result.matched_items]
+        missing = [item.feedback_if_missing for item in rubric_result.missing_items]
         return ConsolidationResponse(
             response_id=str(uuid4()),
             analysis_id=analysis.analysis_id,
             acknowledgement=(
                 "You made the useful first move: you exposed your current understanding before receiving the explanation."
             ),
-            what_was_useful=analysis.prior_knowledge_detected or ["You attempted the problem instead of waiting for the answer."],
-            missing_or_confused=[analysis.missing_concept, analysis.misconception_summary],
+            what_was_useful=useful or ["You attempted the problem instead of waiting for the answer."],
+            missing_or_confused=missing or ["No major rubric gap detected; now practise transfer without notes."],
             explanation=concept.canonical_explanation,
-            worked_example=self._worked_example(concept),
-            immediate_retrieval_prompt=first_seed,
+            worked_example=concept.worked_example,
+            immediate_retrieval_prompt=first_question.question_text,
+            source=concept.source,
             created_at=created_at,
         )
 
@@ -267,68 +313,38 @@ class MockLearningEngine:
         quiz_id = str(uuid4())
         questions = [
             QuizQuestion(
-                question_id="q1",
-                question_text=concept.retrieval_question_seeds[0],
-                question_type=QuestionType.SHORT_ANSWER,
-            ),
-            QuizQuestion(
-                question_id="q2",
-                question_text=concept.retrieval_question_seeds[1],
-                question_type=QuestionType.SHORT_ANSWER,
-            ),
-            QuizQuestion(
-                question_id="q3",
-                question_text=concept.retrieval_question_seeds[2],
-                question_type=QuestionType.SCENARIO_TRANSFER,
-            ),
+                question_id=seed.question_id,
+                question_text=seed.question_text,
+                question_type=seed.question_type,
+                source_citation_label=concept.source.citation_label,
+            )
+            for seed in concept.retrieval_questions
         ]
         answer_key = [
             QuizAnswer(
-                question_id="q1",
-                expected_answer=concept.expected_reasoning_steps[0],
-                scoring_guidance="Look for the core concept, not exact wording.",
-            ),
-            QuizAnswer(
-                question_id="q2",
-                expected_answer=concept.common_misconceptions[0],
-                scoring_guidance="The answer should identify the trap or consequence.",
-            ),
-            QuizAnswer(
-                question_id="q3",
-                expected_answer=concept.expected_reasoning_steps[-1],
-                scoring_guidance="The answer should transfer the rule to a new scenario.",
-            ),
+                question_id=seed.question_id,
+                expected_answer=seed.expected_answer,
+                scoring_guidance=seed.scoring_guidance,
+                source_citation_label=concept.source.citation_label,
+            )
+            for seed in concept.retrieval_questions
         ]
         return StoredRetrievalQuiz(
             quiz_id=quiz_id,
             session_id=session_id,
             questions=questions,
             answer_key=answer_key,
+            source=concept.source,
             created_at=created_at,
         )
 
-    def _worked_example(self, concept: Concept) -> str:
-        examples = {
-            "law_offer_acceptance": (
-                "If a seller offers a phone for R2,000 and the buyer replies, 'I accept for R2,000,' "
-                "that is acceptance. If the buyer replies, 'I accept if you include headphones,' the buyer has changed the terms."
-            ),
-            "commerce_break_even_analysis": (
-                "If fixed costs are R3,000 and each unit contributes R75 after variable cost, break-even is 3,000 / 75 = 40 units."
-            ),
-            "engineering_moments": (
-                "A 20 N force applied 0.5 m from a pivot gives a moment of 20 x 0.5 = 10 N m."
-            ),
-            "python_lists_sliding_window": (
-                "Keep readings in one list. Append the newest reading. If the list length becomes 11, remove index 0 so only 10 remain."
-            ),
-        }
-        return examples.get(concept.concept_id, concept.canonical_explanation)
-
     def _content_tokens(self, text: str) -> list[str]:
-        ignored = {"the", "and", "or", "a", "an", "to", "of", "as", "is", "be", "for"}
-        cleaned = "".join(character.lower() if character.isalnum() else " " for character in text)
+        ignored = {"the", "and", "or", "a", "an", "to", "of", "as", "is", "be", "for", "with", "that"}
+        cleaned = self._normalize(text)
         return [token for token in cleaned.split() if len(token) > 3 and token not in ignored]
+
+    def _normalize(self, text: str) -> str:
+        return " ".join("".join(character.lower() if character.isalnum() else " " for character in text).split())
 
     def _mastery_from_score(self, score: float) -> MasteryEstimate:
         if score >= 0.99:
@@ -343,7 +359,7 @@ class MockLearningEngine:
         if mastery == MasteryEstimate.SECURE:
             return "Move to a harder transfer problem and explain the rule without notes."
         if mastery == MasteryEstimate.ALMOST_THERE:
-            return "Redo the transfer question and focus on the missing condition."
+            return "Redo the transfer question and focus on the missing source-backed criterion."
         if mastery == MasteryEstimate.DEVELOPING:
-            return "Review the consolidation, then answer a fresh retrieval question."
-        return "Return to the worked example and write the rule in your own words before retrying."
+            return "Review the consolidation, then answer a fresh retrieval question from the same source pack."
+        return "Return to the worked example and write the source-grounded rule in your own words before retrying."

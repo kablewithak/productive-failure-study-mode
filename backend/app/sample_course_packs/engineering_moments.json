@@ -1,0 +1,114 @@
+{
+  "concept_id": "engineering_moments",
+  "title": "Moments: turning effect of a force",
+  "discipline": "Engineering and Physical Sciences",
+  "module_context": "Mechanics",
+  "learning_outcome": "Explain and calculate the moment produced by a force acting at a distance from a pivot.",
+  "prerequisite_knowledge": [
+    "force",
+    "distance",
+    "multiplication",
+    "clockwise and anticlockwise rotation"
+  ],
+  "challenge_type": "short_problem_solving",
+  "challenge_prompt": "A 20 N force is applied downward at the end of a 0.5 m spanner. Before receiving the full rule, explain what affects the turning effect around the bolt and estimate the size of that turning effect.",
+  "expected_reasoning_steps": [
+    "Recognize that a force can rotate an object around a pivot.",
+    "Identify the force magnitude.",
+    "Identify the perpendicular distance from the pivot.",
+    "Multiply force by perpendicular distance.",
+    "State the result with an appropriate unit and direction where relevant."
+  ],
+  "common_misconceptions": [
+    "Considering only force and ignoring distance from the pivot.",
+    "Considering only distance and ignoring force.",
+    "Using mass instead of force.",
+    "Forgetting that the perpendicular distance matters."
+  ],
+  "canonical_explanation": "A moment is the turning effect of a force around a pivot. For a force applied perpendicular to the lever arm, moment equals force multiplied by perpendicular distance from the pivot. The larger the force or the distance, the larger the turning effect.",
+  "canonical_answer": "The turning effect depends on both the force and its perpendicular distance from the pivot. Here the moment is 20 N multiplied by 0.5 m, which equals 10 N m. Direction should be stated where relevant.",
+  "worked_example": "A 20 N force applied 0.5 m from a pivot gives a moment of 20 x 0.5 = 10 N m.",
+  "source": {
+    "source_id": "sample-engineering-moments-001",
+    "title": "Sample Mechanics Notes: Moments",
+    "citation_label": "Sample Mechanics Notes - Section 3",
+    "excerpt": "The moment of a force is its turning effect about a pivot. For a perpendicular force, moment equals force multiplied by perpendicular distance from the pivot. The SI unit is newton metre, N m. Increasing either the force or the distance increases the moment."
+  },
+  "rubric_items": [
+    {
+      "rubric_item_id": "turning_effect",
+      "criterion": "Identifies moment as turning effect around a pivot",
+      "expected_markers": [
+        "turning",
+        "rotate",
+        "rotation",
+        "pivot",
+        "bolt"
+      ],
+      "feedback_if_missing": "Start by explaining that a moment is a turning effect around the pivot.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "force",
+      "criterion": "Uses the force magnitude",
+      "expected_markers": [
+        "20 n",
+        "20n",
+        "force",
+        "20"
+      ],
+      "feedback_if_missing": "Use the 20 N force in the calculation.",
+      "weight": 1
+    },
+    {
+      "rubric_item_id": "distance",
+      "criterion": "Uses perpendicular distance from pivot",
+      "expected_markers": [
+        "0.5",
+        "distance",
+        "perpendicular",
+        "spanner",
+        "lever"
+      ],
+      "feedback_if_missing": "Include the 0.5 m perpendicular distance from the pivot.",
+      "weight": 2
+    },
+    {
+      "rubric_item_id": "calculation_unit",
+      "criterion": "Calculates and states the moment with unit",
+      "expected_markers": [
+        "10",
+        "n m",
+        "nm",
+        "newton metre",
+        "20 x 0.5",
+        "20*0.5"
+      ],
+      "feedback_if_missing": "Multiply 20 N by 0.5 m and state the result as 10 N m.",
+      "weight": 2
+    }
+  ],
+  "retrieval_questions": [
+    {
+      "question_id": "q1",
+      "question_text": "Why does pushing farther from the pivot create a larger moment?",
+      "question_type": "short_answer",
+      "expected_answer": "Because moment is force multiplied by perpendicular distance from the pivot, so increasing distance increases the turning effect.",
+      "scoring_guidance": "Look for force times perpendicular distance."
+    },
+    {
+      "question_id": "q2",
+      "question_text": "What unit should be used for moment in this context?",
+      "question_type": "short_answer",
+      "expected_answer": "The unit is newton metre, written N m.",
+      "scoring_guidance": "Accept N m or newton metre."
+    },
+    {
+      "question_id": "q3",
+      "question_text": "Transfer: What moment is produced by a 15 N force applied 0.4 m from a pivot?",
+      "question_type": "scenario_transfer",
+      "expected_answer": "Moment is 15 x 0.4 = 6 N m.",
+      "scoring_guidance": "The answer should multiply force by perpendicular distance and give N m."
+    }
+  ]
+}

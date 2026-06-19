@@ -181,3 +181,23 @@ The next durable seams are:
 4. Citation/provenance fields on challenge and consolidation outputs.
 5. Scheduled spaced retrieval events.
 6. Institution-level analytics with privacy controls.
+
+## Phase 6.5 source-grounded sample course packs
+
+The prototype now uses bundled sample course packs as the source-of-truth layer for the deterministic learning flow. This is intentionally smaller than a full upload/RAG pipeline.
+
+New boundary:
+
+```text
+sample_course_packs/*.json
+  → SampleCoursePack validation
+  → Concept seed contract
+  → rubric-based attempt analysis
+  → source-grounded consolidation
+  → source-grounded retrieval quiz
+  → hidden answer key used only at quiz submission
+```
+
+The course packs contain sample source excerpts, rubric criteria, expected markers, canonical answers, worked examples, and retrieval question answer keys. The frontend exposes source provenance such as `Sample Law Notes §1`, but the API still hides quiz answer keys before quiz submission.
+
+This improves the demo logic without pretending to support arbitrary student uploads. Full document ingestion, chunking, retrieval, citation ranking, and unsupported-answer fallback remain future work.
